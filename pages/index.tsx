@@ -35,11 +35,11 @@ type HitProps = {
 
 function Hit({ hit }: HitProps) {
   // Safely extract the desired field from the price object
-  const price = hit.price?.group_0 ?? "N/A";
+  const price = (hit.price as any)?.group_0 ?? "N/A";
 
   return (
     <>
-      <Highlight hit={hit} attribute="name" className="Hit-label" />
+      <Highlight hit={hit} attribute="name" />
       <span className="Hit-price">${price}</span>
     </>
   );
