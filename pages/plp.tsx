@@ -20,6 +20,7 @@ import {
 import { createInstantSearchRouterNext } from "react-instantsearch-router-nextjs";
 
 import { Panel } from "../components/Panel";
+import Image from "next/image";
 
 const responsesCache = createMemoryCache();
 const client = algoliasearch("JDZ432CYPW", "16e05bf66555be22a345fa38ab024cb8", {
@@ -29,26 +30,60 @@ const client = algoliasearch("JDZ432CYPW", "16e05bf66555be22a345fa38ab024cb8", {
 type HitProps = {
   hit: AlgoliaHit<{
     name: string;
-    price: number;
+    image_url: string;
+    price: {
+      USD: {
+        default: number;
+      };
+    };
   }>;
 };
-
-function Hit({ hit }: HitProps) {
-  // Safely extract the desired field from the price object
-  const price = (hit.price as any)?.group_0 ?? "N/A";
-
-  return (
-    <>
-      <Highlight hit={hit} attribute="name" />
-      <span className="Hit-price">${price}</span>
-    </>
-  );
-}
 
 type HomePageProps = {
   serverState?: InstantSearchServerState;
   url?: string;
 };
+
+export const getServerSideProps: GetServerSideProps<HomePageProps> =
+  async function getServerSideProps({ req, res }) {
+    res.setHeader(
+      "Cache-Control",
+      "public, s-maxage=3600, stale-while-revalidate=360"
+    );
+    const protocol = req.headers.referer?.split("://")[0] || "https";
+    const url = `${protocol}://${req.headers.host}${req.url}`;
+    const serverState = await getServerState(<HomePage url={url} />, {
+      renderToString,
+    });
+
+    responsesCache.clear();
+
+    return {
+      props: {
+        serverState,
+        url,
+      },
+    };
+  };
+
+export function Hit({ hit }: HitProps) {
+  // Safely extract the desired field from the price object
+  return (
+    <div className="product">
+      <Image src={hit?.image_url} alt="image" width={200} height={150} />
+      <Highlight hit={hit} attribute="name" />
+      <span className="Hit-price">${hit?.price?.USD?.default}</span>
+    </div>
+  );
+}
+
+export function FallbackComponent({ attribute }: { attribute: string }) {
+  return (
+    <Panel header={attribute}>
+      <RefinementList attribute={attribute} />
+    </Panel>
+  );
+}
 
 export default function HomePage({ serverState, url }: HomePageProps) {
   return (
@@ -74,46 +109,19 @@ export default function HomePage({ serverState, url }: HomePageProps) {
           preserveSharedStateOnUnmount: true,
         }}
       >
+        <h1>Server Side rendering with getServerSideProps</h1>
         <div className="Container">
           <div>
             <DynamicWidgets fallbackComponent={FallbackComponent} />
           </div>
           <div>
             <SearchBox />
-            <Hits hitComponent={Hit} />
+            <div className="products">
+              <Hits hitComponent={Hit} />
+            </div>
           </div>
         </div>
       </InstantSearch>
     </InstantSearchSSRProvider>
   );
 }
-
-function FallbackComponent({ attribute }: { attribute: string }) {
-  return (
-    <Panel header={attribute}>
-      <RefinementList attribute={attribute} />
-    </Panel>
-  );
-}
-
-export const getServerSideProps: GetServerSideProps<HomePageProps> =
-  async function getServerSideProps({ req, res }) {
-    res.setHeader(
-      "Cache-Control",
-      "public, s-maxage=3600, stale-while-revalidate=360"
-    );
-    const protocol = req.headers.referer?.split("://")[0] || "https";
-    const url = `${protocol}://${req.headers.host}${req.url}`;
-    const serverState = await getServerState(<HomePage url={url} />, {
-      renderToString,
-    });
-
-    responsesCache.clear();
-
-    return {
-      props: {
-        serverState,
-        url,
-      },
-    };
-  };

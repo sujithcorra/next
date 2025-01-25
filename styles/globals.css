@@ -20,3 +20,20 @@ body {
   grid-template-columns: minmax(min-content, 200px) 1fr;
   gap: 0.5rem;
 }
+
+.menu {
+  display: flex;
+  gap: 1rem;
+}
+
+.products .ais-Hits-list{
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+}
+
+.product {
+  border: 1px solid grey;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
