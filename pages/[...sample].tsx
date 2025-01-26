@@ -40,6 +40,7 @@ export const getStaticPaths = (async () => {
 
 export async function getStaticProps({ params }: IGetServerSideProps ) {
   const serverUrl = `${process?.env?.BASE_URL}${params?.sample?.[0]}`;
+  console.log('hhh serverUrl', serverUrl)
   const serverState = await getServerState(<HomePage url={serverUrl} />, { renderToString });
 
   return {
